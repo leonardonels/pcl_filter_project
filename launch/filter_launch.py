@@ -14,8 +14,8 @@ def generate_launch_description():
 
         # Start the PointCloudFilter node with parameters
         Node(
-            package='your_package_name',
-            executable='pointcloud_filter',
+            package='pcl_filter_project',
+            executable='pointcloud_filter_node',
             name='pointcloud_filter',
             output='screen',
             parameters=[{
