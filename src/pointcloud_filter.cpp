@@ -18,20 +18,15 @@ void PointCloudFilter::load_parameters()
     this->declare_parameter<std::string>("output_topic", "");
     m_output_topic = this->get_parameter("output_topic").get_value<std::string>();
 
-    // Declare the vertical_zones parameter as a vector of strings
     this->declare_parameter<std::vector<std::string>>("vertical_zones");
-
-    // Get the vertical_zones parameter
     auto vertical_zones = this->get_parameter("vertical_zones").get_value<std::vector<std::string>>();
 
-    // Parse each zone
     for (const auto& zone_str : vertical_zones)
     {
         try
         {
             // You need to manually parse the string into start, end, and downsample values
             std::map<std::string, std::string> zone_map;
-            // Assuming you use some string parsing or regex here to extract start, end, and downsample values
             // For example:
             // "start: 0.0, end: 0.33, downsample: 3"
             size_t start_pos = zone_str.find("start: ");
@@ -58,7 +53,6 @@ void PointCloudFilter::load_parameters()
         }
     }
 
-    // Output the parsed zones to verify
     for (const auto& zone : m_vertical_zones)
     {
         RCLCPP_INFO(this->get_logger(), "Zone - Start: %f, End: %f, Downsample: %d", zone.start, zone.end, zone.downsample);
@@ -75,6 +69,7 @@ void PointCloudFilter::initialize()
 
     rclcpp::QoS qos_be(rclcpp::KeepLast(1));
     qos_be.best_effort();
+
     // Initialize pubs and subs
     m_input_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         m_input_topic, qos_rel,
@@ -94,7 +89,6 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*msg, *cloud);  // Use pcl_conversions to convert PointCloud2 to pcl::PointCloud
 
-    // Step 2: Vertical zones filtering
     std::vector<int> selected_indices;
     for (const auto& zone : m_vertical_zones)
     {
@@ -103,7 +97,6 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
         end_row = std::min(end_row, static_cast<int>(cloud->height));
         int step = std::max(zone.downsample, 1);
         
-        // Select points in the vertical range and downsample
         for (int i = start_row; i < end_row; i += step)
         {
             for (int j = 0; j < cloud->width; ++j)
@@ -114,7 +107,6 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
         }
     }
 
-    // Step 3: Filter out points based on selected indices
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::ExtractIndices<pcl::PointXYZ> extract;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
@@ -127,15 +119,12 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     extract.setNegative(false);
     extract.filter(*filtered_cloud);
 
-    // Step 4: Convert filtered point cloud back to PointCloud2
     sensor_msgs::msg::PointCloud2 filtered_msg;
     pcl::toROSMsg(*filtered_cloud, filtered_msg);  // Use pcl_conversions to convert back to PointCloud2
     filtered_msg.header = msg->header;
 
-    // Step 5: Publish the filtered point cloud
     m_output_pub->publish(filtered_msg);
 
-    // Log the total duration
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> total_duration = end_time - start_time;
     RCLCPP_INFO(this->get_logger(), "Total callback duration: %f seconds", total_duration.count());
