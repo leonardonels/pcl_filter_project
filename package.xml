@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>pcl_filter_project</name>
+  <version>0.0.1</version>
+  <description>PointCloud2 vertical filter in C++</description>
+  <maintainer email="todo@email.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  
+  <buildtool_depend>sensor_msgs</buildtool_depend>
+  <buildtool_depend>std_msgs</buildtool_depend>
+
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+   <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>
