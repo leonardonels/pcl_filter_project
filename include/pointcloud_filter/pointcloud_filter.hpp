@@ -18,19 +18,23 @@ struct VerticalZone {
 class PointCloudFilter : public rclcpp::Node
 {
 public:
-    PointCloudFilter(); // Constructor declaration
-    ~PointCloudFilter() = default;
+    PointCloudFilter();
 
 private:
+    // callbacks
     void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
-    std::string input_topic_;
-    std::string output_topic_;
-    double filter_radius_;
-    double filter_intensity_threshold_;
+    // methods
+    void initialize();
+    void load_parameters();
 
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_subscriber_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_publisher_;
+    // pubs and subs
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_input_sub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_output_pub;
+
+    //topics
+    std::string m_input_topic;
+    std::string m_output_topic;
 };
 
 #endif // POINTCLOUD_FILTER_HPP

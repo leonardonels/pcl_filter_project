@@ -1,31 +1,39 @@
-#include "pointcloud_filter_cpp/pointcloud_filter.hpp"
+#include "pointcloud_filter/pointcloud_filter.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "std_msgs/msg/string.hpp"
 
-PointCloudFilter::PointCloudFilter() : Node("pointcloud_filter")
+void PointCloudFilter::load_parameters()
 {
-    // Declare parameters and load them
-    this->declare_parameter<std::string>("input_topic", "input_point_cloud");
-    this->declare_parameter<std::string>("output_topic", "filtered_point_cloud");
-    this->declare_parameter<double>("filter_radius", 0.2);
-    this->declare_parameter<double>("filter_intensity_threshold", 1.0);
+    // topics
+    this->declare_parameter<std::string>("input_topic", "");
+    m_input_topic = this->get_parameter("input_topic").get_value<std::string>();
 
-    // Get parameters
-    input_topic_ = this->get_parameter("input_topic").get_value<std::string>();
-    output_topic_ = this->get_parameter("output_topic").get_value<std::string>();
-    filter_radius_ = this->get_parameter("filter_radius").get_value<double>();
-    filter_intensity_threshold_ = this->get_parameter("filter_intensity_threshold").get_value<double>();
+    this->declare_parameter<std::string>("output_topic", "");
+    m_output_topic = this->get_parameter("output_topic").get_value<std::string>();
+}
 
-    // Log the parameters
-    RCLCPP_INFO(this->get_logger(), "Using parameters: %s, %s, %f, %f",
-                input_topic_.c_str(), output_topic_.c_str(), filter_radius_, filter_intensity_threshold_);
+void PointCloudFilter::initialize()
+{
+    // Load parameters
+    this->load_parameters();
 
-    // Create subscribers and publishers
-    point_cloud_subscriber_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        input_topic_, 10, std::bind(&PointCloudFilter::pointcloud_callback, this, std::placeholders::_1));
+    rclcpp::QoS qos_rel(rclcpp::KeepLast(1));
+    qos_rel.reliable();
 
-    point_cloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(output_topic_, 10);
+    rclcpp::QoS qos_be(rclcpp::KeepLast(1));
+    qos_be.best_effort();
+    // Initialize pubs and subs
+    m_input_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+        m_input_topic, qos_rel,
+        std::bind(&PointCloudFilter::pointcloud_callback, this, std::placeholders::_1));
+    m_output_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>(m_output_topic, 10);
+}
+
+
+PointCloudFilter::PointCloudFilter() : Node("pointcloud_filter_node") 
+{
+    this->initialize();
 }
 
 void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -34,5 +42,5 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     // Implement your filtering logic here
 
     // For simplicity, just forward the message to the output topic
-    point_cloud_publisher_->publish(*msg);
+    m_output_pub->publish(*msg);
 }
