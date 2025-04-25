@@ -35,6 +35,8 @@ private:
     //topics
     std::string m_input_topic;
     std::string m_output_topic;
+
+    std::vector<VerticalZone> m_vertical_zones;
 };
 
 #endif // POINTCLOUD_FILTER_HPP
