@@ -1,5 +1,5 @@
 <div align="center">
-    <h1>Simple Ros2 node to rotate, traslate and dynamically filter vertically</h1>
+    <h1>Simple Ros2 node to rotate, traslate and dynamically filter rays vertically</h1>
 </div>
 
 ## :abacus: Parameters
