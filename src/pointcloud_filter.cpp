@@ -6,17 +6,23 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/common/transforms.h>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h> 
 
 void PointCloudFilter::load_parameters()
 {
-    // Declare topics
     this->declare_parameter<std::string>("input_topic", "");
     m_input_topic = this->get_parameter("input_topic").get_value<std::string>();
 
     this->declare_parameter<std::string>("output_topic", "");
     m_output_topic = this->get_parameter("output_topic").get_value<std::string>();
+
+    this->declare_parameter<double>("rotation_angle", 0.0);
+    m_rotation_angle = this->get_parameter("rotation_angle").as_double();
+
+    this->declare_parameter<double>("traslation", 0.0);
+    m_traslation = this->get_parameter("traslation").as_double();
 
     this->declare_parameter<std::vector<std::string>>("vertical_zones");
     auto vertical_zones = this->get_parameter("vertical_zones").get_value<std::vector<std::string>>();
@@ -88,6 +94,18 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*msg, *cloud);  // Use pcl_conversions to convert PointCloud2 to pcl::PointCloud
+
+    // Apply rotation compensation if enabled
+    if (m_rotation_angle || m_traslation)
+    {
+        RCLCPP_INFO(this->get_logger(), "Rotation angle: %f", static_cast<float>(m_rotation_angle));
+        RCLCPP_INFO(this->get_logger(), "Traslation: %f", static_cast<float>(m_traslation));
+        Eigen::Affine3f transform = Eigen::Affine3f::Identity();
+        transform.rotate(Eigen::AngleAxisf(static_cast<float>(m_rotation_angle), Eigen::Vector3f::UnitY()));
+        transform.translation() << 0.0, 0.0, static_cast<float>(m_traslation);
+        pcl::transformPointCloud(*cloud, *cloud, transform);
+    }
+
 
     std::vector<int> selected_indices;
     for (const auto& zone : m_vertical_zones)

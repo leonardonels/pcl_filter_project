@@ -36,6 +36,9 @@ private:
     std::string m_input_topic;
     std::string m_output_topic;
 
+    double m_rotation_angle;
+    double m_traslation;
+
     std::vector<VerticalZone> m_vertical_zones;
 };
 
