@@ -18,11 +18,20 @@ void PointCloudFilter::load_parameters()
     this->declare_parameter<std::string>("output_topic", "");
     m_output_topic = this->get_parameter("output_topic").get_value<std::string>();
 
-    this->declare_parameter<double>("rotation_angle", 0.0);
-    m_rotation_angle = this->get_parameter("rotation_angle").as_double();
+    this->declare_parameter<double>("y_rotation_angle", 0.0);
+    m_y_rotation_angle = this->get_parameter("y_rotation_angle").as_double();
 
-    this->declare_parameter<double>("traslation", 0.0);
-    m_traslation = this->get_parameter("traslation").as_double();
+    this->declare_parameter<double>("x_traslation", 0.0);
+    m_x_traslation = this->get_parameter("x_traslation").as_double();
+
+    this->declare_parameter<double>("y_traslation", 0.0);
+    m_y_traslation = this->get_parameter("y_traslation").as_double();
+
+    this->declare_parameter<double>("z_traslation", 0.0);
+    m_z_traslation = this->get_parameter("z_traslation").as_double();
+
+    this->declare_parameter<bool>("gradient", false);
+    m_gradient = this->get_parameter("gradient").get_value<bool>();
 
     this->declare_parameter<std::vector<std::string>>("vertical_zones");
     auto vertical_zones = this->get_parameter("vertical_zones").get_value<std::vector<std::string>>();
@@ -59,9 +68,11 @@ void PointCloudFilter::load_parameters()
         }
     }
 
-    for (const auto& zone : m_vertical_zones)
-    {
-        RCLCPP_INFO(this->get_logger(), "Zone - Start: %f, End: %f, Downsample: %d", zone.start, zone.end, zone.downsample);
+    if(m_gradient){
+        for (const auto& zone : m_vertical_zones)
+        {
+            RCLCPP_INFO(this->get_logger(), "Zone - Start: %f, End: %f, Downsample: %d", zone.start, zone.end, zone.downsample);
+        }   
     }
 }
 
@@ -96,54 +107,69 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     pcl::fromROSMsg(*msg, *cloud);  // Use pcl_conversions to convert PointCloud2 to pcl::PointCloud
 
     // Apply rotation compensation or traslation if enabled
-    if (m_rotation_angle || m_traslation)
+    if (m_y_rotation_angle || m_x_traslation || m_y_traslation || m_z_traslation)
     {
-        RCLCPP_INFO(this->get_logger(), "Rotation angle: %f rads", static_cast<float>(m_rotation_angle));
-        RCLCPP_INFO(this->get_logger(), "Traslation: %fm", static_cast<float>(m_traslation));
+        RCLCPP_INFO(this->get_logger(), "Rotation angle: %f rads", static_cast<float>(m_y_rotation_angle));
+        RCLCPP_INFO(this->get_logger(), "Traslation: %fm, %fm, %fm,", static_cast<float>(m_x_traslation), static_cast<float>(m_y_traslation), static_cast<float>(m_z_traslation));
+        
         Eigen::Affine3f transform = Eigen::Affine3f::Identity();
-        transform.rotate(Eigen::AngleAxisf(static_cast<float>(m_rotation_angle), Eigen::Vector3f::UnitY()));
-        transform.translation() << 0.0, 0.0, static_cast<float>(m_traslation);
+        transform.rotate(Eigen::AngleAxisf(static_cast<float>(m_y_rotation_angle), Eigen::Vector3f::UnitY()));
+        transform.translation() << static_cast<float>(m_x_traslation), 
+                                    static_cast<float>(m_y_traslation), 
+                                    static_cast<float>(m_z_traslation);
         pcl::transformPointCloud(*cloud, *cloud, transform);
     }
 
-
-    std::vector<int> selected_indices;
-    for (const auto& zone : m_vertical_zones)
+    if(m_gradient)
     {
-        int start_row = static_cast<int>(zone.start * cloud->height);
-        int end_row = static_cast<int>(zone.end * cloud->height);
-        end_row = std::min(end_row, static_cast<int>(cloud->height));
-        int step = std::max(zone.downsample, 1);
-        
-        for (int i = start_row; i < end_row; i += step)
+        std::vector<int> selected_indices;
+        for (const auto& zone : m_vertical_zones)
         {
-            for (int j = 0; j < cloud->width; ++j)
+            int start_row = static_cast<int>(zone.start * cloud->height);
+            int end_row = static_cast<int>(zone.end * cloud->height);
+            end_row = std::min(end_row, static_cast<int>(cloud->height));
+            int step = std::max(zone.downsample, 1);
+            
+            for (int i = start_row; i < end_row; i += step)
             {
-                int index = i * cloud->width + j;
-                selected_indices.push_back(index);
+                for (int j = 0; j < cloud->width; ++j)
+                {
+                    int index = i * cloud->width + j;
+                    selected_indices.push_back(index);
+                }
             }
         }
+        
+        pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::ExtractIndices<pcl::PointXYZ> extract;
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+        for (int idx : selected_indices)
+        {
+            inliers->indices.push_back(idx);
+        }
+        extract.setInputCloud(cloud);
+        extract.setIndices(inliers);
+        extract.setNegative(false);
+        extract.filter(*filtered_cloud);
+        
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*filtered_cloud, filtered_msg);  // Use pcl_conversions to convert back to PointCloud2
+        filtered_msg.header = msg->header;
+        
+        m_output_pub->publish(filtered_msg);
+        
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> total_duration = end_time - start_time;
+        RCLCPP_INFO(this->get_logger(), "Total callback duration: %f seconds", total_duration.count());
+    }else{
+        sensor_msgs::msg::PointCloud2 filtered_msg;
+        pcl::toROSMsg(*cloud, filtered_msg);  // Use pcl_conversions to convert back to PointCloud2
+        filtered_msg.header = msg->header;
+
+        m_output_pub->publish(filtered_msg);
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> total_duration = end_time - start_time;
+        RCLCPP_INFO(this->get_logger(), "Total callback duration: %f seconds", total_duration.count());
     }
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::ExtractIndices<pcl::PointXYZ> extract;
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-    for (int idx : selected_indices)
-    {
-        inliers->indices.push_back(idx);
-    }
-    extract.setInputCloud(cloud);
-    extract.setIndices(inliers);
-    extract.setNegative(false);
-    extract.filter(*filtered_cloud);
-
-    sensor_msgs::msg::PointCloud2 filtered_msg;
-    pcl::toROSMsg(*filtered_cloud, filtered_msg);  // Use pcl_conversions to convert back to PointCloud2
-    filtered_msg.header = msg->header;
-
-    m_output_pub->publish(filtered_msg);
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> total_duration = end_time - start_time;
-    RCLCPP_INFO(this->get_logger(), "Total callback duration: %f seconds", total_duration.count());
 }

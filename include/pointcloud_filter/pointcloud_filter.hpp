@@ -36,8 +36,11 @@ private:
     std::string m_input_topic;
     std::string m_output_topic;
 
-    double m_rotation_angle;
-    double m_traslation;
+    bool m_gradient;
+    double m_y_rotation_angle;
+    double m_x_traslation;
+    double m_y_traslation;
+    double m_z_traslation;
 
     std::vector<VerticalZone> m_vertical_zones;
 };
