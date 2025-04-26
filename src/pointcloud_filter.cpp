@@ -95,7 +95,7 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*msg, *cloud);  // Use pcl_conversions to convert PointCloud2 to pcl::PointCloud
 
-    // Apply rotation compensation if enabled
+    // Apply rotation compensation or traslation if enabled
     if (m_rotation_angle || m_traslation)
     {
         RCLCPP_INFO(this->get_logger(), "Rotation angle: %f rads", static_cast<float>(m_rotation_angle));
