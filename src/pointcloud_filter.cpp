@@ -98,8 +98,8 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     // Apply rotation compensation if enabled
     if (m_rotation_angle || m_traslation)
     {
-        RCLCPP_INFO(this->get_logger(), "Rotation angle: %f", static_cast<float>(m_rotation_angle));
-        RCLCPP_INFO(this->get_logger(), "Traslation: %f", static_cast<float>(m_traslation));
+        RCLCPP_INFO(this->get_logger(), "Rotation angle: %f rads", static_cast<float>(m_rotation_angle));
+        RCLCPP_INFO(this->get_logger(), "Traslation: %fm", static_cast<float>(m_traslation));
         Eigen::Affine3f transform = Eigen::Affine3f::Identity();
         transform.rotate(Eigen::AngleAxisf(static_cast<float>(m_rotation_angle), Eigen::Vector3f::UnitY()));
         transform.translation() << 0.0, 0.0, static_cast<float>(m_traslation);
