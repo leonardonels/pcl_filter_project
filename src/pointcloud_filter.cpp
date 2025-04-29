@@ -109,7 +109,7 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
     auto transform_start_time = std::chrono::high_resolution_clock::now();
     auto transform_end_time = std::chrono::high_resolution_clock::now();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*msg, *cloud);  // Use pcl_conversions to convert PointCloud2 to pcl::PointCloud
 
     // Apply rotation compensation or traslation if enabled
@@ -151,8 +151,8 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
             }
         }
         
-        pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::ExtractIndices<pcl::PointXYZ> extract;
+        pcl::PointCloud<pcl::PointXYZI>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::ExtractIndices<pcl::PointXYZI> extract;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
         for (int idx : selected_indices)
         {
