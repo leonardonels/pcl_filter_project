@@ -7,8 +7,8 @@ pointcloud_filter_node:
     y_traslation: 0.
     z_traslation: 1.
     gradient: true
-    vertical_zones:
-      - "start: 0.0, end: 0.25, downsample: 4"
-      - "start: 0.25, end: 0.75, downsample: 1"
-      - "start: 0.75, end: 1.0, downsample: 4"
     intensity: false
+    vertical_zones:
+      - "start: 0.0, end: 0.325, downsample: 12"
+      - "start: 0.325, end: 0.525, downsample: 5"
+      - "start: 0.525, end: 1.0, downsample: 8"
