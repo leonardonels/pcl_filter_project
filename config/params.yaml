@@ -11,3 +11,4 @@ pointcloud_filter_node:
       - "start: 0.0, end: 0.25, downsample: 4"
       - "start: 0.25, end: 0.75, downsample: 1"
       - "start: 0.75, end: 1.0, downsample: 4"
+    intensity: false

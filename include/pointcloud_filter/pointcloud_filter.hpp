@@ -22,6 +22,7 @@ public:
 
 private:
     // callbacks
+    template<typename T>
     void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
     // methods
@@ -37,6 +38,7 @@ private:
     std::string m_output_topic;
 
     bool m_gradient;
+    bool m_intensity;
     double m_y_rotation_angle;
     double m_x_traslation;
     double m_y_traslation;

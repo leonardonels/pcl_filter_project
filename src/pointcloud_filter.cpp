@@ -30,6 +30,9 @@ void PointCloudFilter::load_parameters()
     this->declare_parameter<double>("z_traslation", 0.0);
     m_z_traslation = this->get_parameter("z_traslation").as_double();
 
+    this->declare_parameter<bool>("intensity", false);
+    m_intensity = this->get_parameter("intensity").get_value<bool>();
+
     this->declare_parameter<bool>("gradient", false);
     m_gradient = this->get_parameter("gradient").get_value<bool>();
 
@@ -92,9 +95,21 @@ void PointCloudFilter::initialize()
     qos_be.best_effort();
 
     // Initialize pubs and subs
-    m_input_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        m_input_topic, qos_rel,
-        std::bind(&PointCloudFilter::pointcloud_callback, this, std::placeholders::_1));
+    if(m_intensity){
+        m_input_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+            m_input_topic, qos_rel,
+            [this](const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+                this->pointcloud_callback<pcl::PointXYZI>(msg);
+            }
+        );
+    }else{
+        m_input_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+            m_input_topic, qos_rel,
+            [this](const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+                this->pointcloud_callback<pcl::PointXYZ>(msg);
+            }
+        );
+    }
     m_output_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>(m_output_topic, 10);
 }
 
@@ -103,13 +118,14 @@ PointCloudFilter::PointCloudFilter() : Node("pointcloud_filter_node")
     this->initialize();
 }
 
+template<typename T>
 void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
     auto transform_start_time = std::chrono::high_resolution_clock::now();
     auto transform_end_time = std::chrono::high_resolution_clock::now();
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    typename pcl::PointCloud<T>::Ptr cloud(new pcl::PointCloud<T>);
     pcl::fromROSMsg(*msg, *cloud);  // Use pcl_conversions to convert PointCloud2 to pcl::PointCloud
 
     // Apply rotation compensation or traslation if enabled
@@ -151,8 +167,8 @@ void PointCloudFilter::pointcloud_callback(const sensor_msgs::msg::PointCloud2::
             }
         }
         
-        pcl::PointCloud<pcl::PointXYZI>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZI>);
-        pcl::ExtractIndices<pcl::PointXYZI> extract;
+        typename pcl::PointCloud<T>::Ptr filtered_cloud(new pcl::PointCloud<T>);
+        typename pcl::ExtractIndices<T> extract;
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
         for (int idx : selected_indices)
         {
