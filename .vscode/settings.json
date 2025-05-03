@@ -14,7 +14,6 @@
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
-        "*.tcc": "cpp",
         "bitset": "cpp",
         "chrono": "cpp",
         "codecvt": "cpp",
@@ -68,13 +67,6 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "__nullptr": "cpp",
-        "__node_handle": "cpp",
-        "core": "cpp",
-        "__locale": "cpp",
-        "__hash_table": "cpp",
-        "__split_buffer": "cpp",
-        "__tree": "cpp",
-        "queue": "cpp",
-        "stack": "cpp"
+        "__split_buffer": "cpp"
     }
 }

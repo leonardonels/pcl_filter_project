@@ -15,6 +15,13 @@ struct VerticalZone {
   int downsample;
 };
 
+struct AngleZone {
+  double start;
+  double end;
+  int downsample;
+};
+
+
 class PointCloudFilter : public rclcpp::Node
 {
 public:
@@ -44,6 +51,7 @@ private:
     double m_y_traslation;
     double m_z_traslation;
 
+    std::vector<AngleZone> m_angle_zones;
     std::vector<VerticalZone> m_vertical_zones;
 };
 

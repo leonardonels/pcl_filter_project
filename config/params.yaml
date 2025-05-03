@@ -1,14 +1,16 @@
 pointcloud_filter_node:
   ros__parameters:
-    input_topic: "/lidar/points"
-    output_topic: "/lidar/filtered"
-    y_rotation_angle: -0.1570796 
+    input_topic: "/points"
+    output_topic: "/points/filtered"
+    y_rotation_angle: 0.1570796 
     x_traslation: 0.
     y_traslation: 0.
     z_traslation: 1.
     gradient: true
     intensity: false
-    vertical_zones:
-      - "start: 0.0, end: 0.325, downsample: 12"
-      - "start: 0.325, end: 0.525, downsample: 5"
-      - "start: 0.525, end: 1.0, downsample: 8"
+    angle_zones:  #OT128
+      - "start: 0.0, end: 0.1558823529411765, downsample: 5"
+      - "start: 0.1558823529411765, end: 0.5470588235294117, downsample: 3"
+      - "start: 0.5470588235294117, end: 0.7860294117647059, downsample: 1"
+      - "start: 0.7860294117647059, end: 0.9647058823529412, downsample: 3"
+      - "start: 0.9647058823529412, end: 1.0, downsample: 7"
