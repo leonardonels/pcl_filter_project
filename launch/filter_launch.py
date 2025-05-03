@@ -6,14 +6,14 @@ import os
 def generate_launch_description():
 
     config = os.path.join(
-        get_package_share_directory('pcl-filter'),
+        get_package_share_directory('pcl_filter_project'),
         'config',
         'params.yaml'
         )
         
     return LaunchDescription([
         Node(
-            package='pcl-filter',
+            package='pcl_filter_project',
             executable='pointcloud_filter_node',
             parameters=[config],
             name='pointcloud_filter_node',

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(pcl-filter)
+project(pcl_filter_project)
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 17)
